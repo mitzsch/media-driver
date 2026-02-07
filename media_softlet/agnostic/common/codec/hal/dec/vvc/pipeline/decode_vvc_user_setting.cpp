@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022, Intel Corporation
+* Copyright (c) 2026, Intel Corporation
 *
 * Permission is hereby granted, free of charge, to any person obtaining a
 * copy of this software and associated documentation files (the "Software"),
@@ -20,46 +20,38 @@
 * OTHER DEALINGS IN THE SOFTWARE.
 */
 //!
-//! \file     mhw_vdbox_hcp_impl_xe3_lpm_base.h
-//! \brief    MHW VDBOX HCP interface common base for all XE3_LPM platforms
-//! \details
+//! \file     decode_vvc_user_setting.cpp
+//! \brief    Defines the interface for VVC decode pipeline user setting
+//! \details  Declares user setting keys for VVC decode features including command counter
 //!
+#include "decode_vvc_pipeline.h"
+#include "decode_utils.h"
 
-#ifndef __MHW_VDBOX_HCP_IMPL_XE3_LPM_BASE_H__
-#define __MHW_VDBOX_HCP_IMPL_XE3_LPM_BASE_H__
-
-#include "mhw_vdbox_hcp_impl.h"
-
-namespace mhw
+namespace decode
 {
-namespace vdbox
+MOS_STATUS VvcPipeline::InitUserSetting(MediaUserSettingSharedPtr userSettingPtr)
 {
-namespace hcp
-{
-namespace xe3_lpm_base
-{
-template <typename cmd_t>
-class BaseImpl : public hcp::Impl<cmd_t>
-{
-protected:
-    using base_t = hcp::Impl<cmd_t>;
-
-    BaseImpl(PMOS_INTERFACE osItf) : base_t(osItf){};
-
-    _MHW_SETCMD_OVERRIDE_DECL(HCP_PIC_STATE)
-    {
-        _MHW_SETCMD_CALLBASE(HCP_PIC_STATE);
-
-#define DO_FIELDS() \
-    DO_FIELD(DW36, VdaqmEnable, params.vdaqmEnable)
-
-#include "mhw_hwcmd_process_cmdfields.h"
-    }
-MEDIA_CLASS_DEFINE_END(mhw__vdbox__hcp__xe3_lpm_base__BaseImpl)
-};
-}  // namespace xe3_lpm_base
-}  // namespace hcp
-}  // namespace vdbox
-}  // namespace mhw
-
-#endif  // __MHW_VDBOX_HCP_IMPL_XE3_LPM_BASE_H__
+    DECODE_FUNC_CALL();
+    DECODE_CHK_STATUS(DecodePipeline::InitUserSetting(userSettingPtr));
+    
+    // Regular user settings (non-debug)
+    DeclareUserSettingKey(
+        userSettingPtr,
+        "VVC Decode Mode",
+        MediaUserSetting::Group::Sequence,
+        int32_t(0),
+        true);
+    
+#if (_DEBUG || _RELEASE_INTERNAL)
+    // Debug-only user settings
+    DeclareUserSettingKeyForDebug(
+        userSettingPtr,
+        "VVC Command Counter",
+        MediaUserSetting::Group::Sequence,
+        int32_t(0),
+        true);
+#endif
+    
+    return MOS_STATUS_SUCCESS;
+}
+}  // namespace decode
